@@ -2,7 +2,7 @@
 
 #====================================================
 #	System Request:Debian 9+/Ubuntu 18.04+/Centos 7+
-#	Author:	wulabing
+#	Author:	wulabing, SJ2050
 #	Dscription: V2ray ws+tls onekey Management
 #	Version: 1.0
 #	email:admin@wulabing.com
@@ -36,10 +36,10 @@ shell_mode="None"
 github_branch="master"
 version_cmp="/tmp/version_cmp.tmp"
 v2ray_conf_dir="/etc/v2ray"
-nginx_conf_dir="/etc/nginx/conf/conf.d"
+nginx_conf_dir="/usr/local/openresty/nginx/conf/conf.d"
 v2ray_conf="${v2ray_conf_dir}/config.json"
 nginx_conf="${nginx_conf_dir}/v2ray.conf"
-nginx_dir="/etc/nginx"
+nginx_dir="/usr/local/openresty/nginx"
 web_dir="/home/wwwroot"
 nginx_openssl_src="/usr/local/src"
 v2ray_bin_dir_old="/usr/bin/v2ray"
@@ -47,13 +47,13 @@ v2ray_bin_dir="/usr/local/bin/v2ray"
 v2ctl_bin_dir="/usr/local/bin/v2ctl"
 v2ray_info_file="$HOME/v2ray_info.inf"
 v2ray_qr_config_file="/usr/local/vmess_qr.json"
-nginx_systemd_file="/etc/systemd/system/nginx.service"
+nginx_systemd_file="/etc/systemd/system/openresty.service"
 v2ray_systemd_file="/etc/systemd/system/v2ray.service"
 v2ray_access_log="/var/log/v2ray/access.log"
 v2ray_error_log="/var/log/v2ray/error.log"
 amce_sh_file="/root/.acme.sh/acme.sh"
 ssl_update_file="/usr/bin/ssl_update.sh"
-nginx_version="1.20.1"
+nginx_version="1.21.4.1"
 openssl_version="1.1.1k"
 jemalloc_version="5.2.1"
 old_config_status="off"
@@ -310,7 +310,7 @@ web_camouflage() {
     rm -rf /home/wwwroot
     mkdir -p /home/wwwroot
     cd /home/wwwroot || exit
-    git clone https://github.com/wulabing/3DCEList.git
+    git clone https://github.com/SJ2050cn/static-nav
     judge "web 站点伪装"
 }
 
@@ -339,7 +339,7 @@ v2ray_install() {
 }
 
 nginx_exist_check() {
-    if [[ -f "/etc/nginx/sbin/nginx" ]]; then
+    if [[ -f "$nginx_dir/sbin/nginx" ]]; then
         echo -e "${OK} ${GreenBG} Nginx已存在，跳过编译安装过程 ${Font}"
         sleep 2
     elif [[ -d "/usr/local/nginx/" ]]; then
@@ -355,7 +355,7 @@ nginx_install() {
     #        rm -rf /etc/nginx
     #    fi
 
-    wget -nc --no-check-certificate http://nginx.org/download/nginx-${nginx_version}.tar.gz -P ${nginx_openssl_src}
+    wget -nc --no-check-certificate https://openresty.org/download/openresty-$nginx_version.tar.gz -P ${nginx_openssl_src}
     judge "Nginx 下载"
     wget -nc --no-check-certificate https://www.openssl.org/source/openssl-${openssl_version}.tar.gz -P ${nginx_openssl_src}
     judge "openssl 下载"
@@ -364,8 +364,8 @@ nginx_install() {
 
     cd ${nginx_openssl_src} || exit
 
-    [[ -d nginx-"$nginx_version" ]] && rm -rf nginx-"$nginx_version"
-    tar -zxvf nginx-"$nginx_version".tar.gz
+    [[ -d openresty-"$nginx_version" ]] && rm -rf openresty-"$nginx_version"
+    tar -zxvf openresty-"$nginx_version".tar.gz
 
     [[ -d openssl-"$openssl_version" ]] && rm -rf openssl-"$openssl_version"
     tar -zxvf openssl-"$openssl_version".tar.gz
@@ -389,7 +389,7 @@ nginx_install() {
     echo -e "${OK} ${GreenBG} 即将开始编译安装 Nginx, 过程稍久，请耐心等待 ${Font}"
     sleep 4
 
-    cd ../nginx-${nginx_version} || exit
+    cd ../openresty-${nginx_version} || exit
 
     ./configure --prefix="${nginx_dir}" \
         --with-http_ssl_module \
@@ -402,7 +402,7 @@ nginx_install() {
         --with-http_mp4_module \
         --with-http_secure_link_module \
         --with-http_v2_module \
-        --with-cc-opt='-O3' \
+        --with-cc-opt='-O2' \
         --with-ld-opt="-ljemalloc" \
         --with-openssl=../openssl-"$openssl_version"
     judge "编译检查"
@@ -416,9 +416,9 @@ nginx_install() {
     sed -i '$i include conf.d/*.conf;' ${nginx_dir}/conf/nginx.conf
 
     # 删除临时文件
-    rm -rf ../nginx-"${nginx_version}"
+    rm -rf ../openresty-"${nginx_version}"
     rm -rf ../openssl-"${openssl_version}"
-    rm -rf ../nginx-"${nginx_version}".tar.gz
+    rm -rf ../openresty-"${nginx_version}".tar.gz
     rm -rf ../openssl-"${openssl_version}".tar.gz
 
     # 添加配置文件夹，适配旧版脚本
@@ -522,7 +522,7 @@ acme() {
 
 v2ray_conf_add_tls() {
     cd /etc/v2ray || exit
-    wget --no-check-certificate https://raw.githubusercontent.com/wulabing/V2Ray_ws-tls_bash_onekey/${github_branch}/tls/config.json -O config.json
+    wget --no-check-certificate https://raw.githubusercontent.com/SJ2050cn/V2Ray_ws-tls_bash_onekey/${github_branch}/tls/config.json -O config.json
     modify_path
     modify_inbound_port
     modify_UUID
@@ -530,7 +530,7 @@ v2ray_conf_add_tls() {
 
 v2ray_conf_add_h2() {
     cd /etc/v2ray || exit
-    wget --no-check-certificate https://raw.githubusercontent.com/wulabing/V2Ray_ws-tls_bash_onekey/${github_branch}/http2/config.json -O config.json
+    wget --no-check-certificate https://raw.githubusercontent.com/SJ2050cn/V2Ray_ws-tls_bash_onekey/${github_branch}/http2/config.json -O config.json
     modify_path
     modify_inbound_port
     modify_UUID
@@ -609,7 +609,7 @@ start_process_systemd() {
     systemctl daemon-reload
     chown -R root.root /var/log/v2ray/
     if [[ "$shell_mode" != "h2" ]]; then
-        systemctl restart nginx
+        systemctl restart openresty
         judge "Nginx 启动"
     fi
     systemctl restart v2ray
@@ -620,7 +620,7 @@ enable_process_systemd() {
     systemctl enable v2ray
     judge "设置 v2ray 开机自启"
     if [[ "$shell_mode" != "h2" ]]; then
-        systemctl enable nginx
+        systemctl enable openresty
         judge "设置 Nginx 开机自启"
     fi
 
@@ -628,12 +628,12 @@ enable_process_systemd() {
 
 stop_process_systemd() {
     if [[ "$shell_mode" != "h2" ]]; then
-        systemctl stop nginx
+        systemctl stop openresty
     fi
     systemctl stop v2ray
 }
 nginx_process_disabled() {
-    [ -f $nginx_systemd_file ] && systemctl stop nginx && systemctl disable nginx
+    [ -f $nginx_systemd_file ] && systemctl stop openresty && systemctl disable openresty
 }
 
 #debian 系 9 10 适配
@@ -650,7 +650,7 @@ nginx_process_disabled() {
 #}
 
 acme_cron_update() {
-    wget -N -P /usr/bin --no-check-certificate "https://raw.githubusercontent.com/wulabing/V2Ray_ws-tls_bash_onekey/dev/ssl_update.sh"
+    wget -N -P /usr/bin --no-check-certificate "https://raw.githubusercontent.com/SJ2050cn/V2Ray_ws-tls_bash_onekey/dev/ssl_update.sh"
     if [[ $(crontab -l | grep -c "ssl_update.sh") -lt 1 ]]; then
       if [[ "${ID}" == "centos" ]]; then
           #        sed -i "/acme.sh/c 0 3 * * 0 \"/root/.acme.sh\"/acme.sh --cron --home \"/root/.acme.sh\" \
@@ -669,7 +669,7 @@ vmess_qr_config_tls_ws() {
     cat >$v2ray_qr_config_file <<-EOF
 {
   "v": "2",
-  "ps": "wulabing_${domain}",
+  "ps": "${domain}",
   "add": "${domain}",
   "port": "${port}",
   "id": "${UUID}",
@@ -687,7 +687,7 @@ vmess_qr_config_h2() {
     cat >$v2ray_qr_config_file <<-EOF
 {
   "v": "2",
-  "ps": "wulabing_${domain}",
+  "ps": "${domain}",
   "add": "${domain}",
   "port": "${port}",
   "id": "${UUID}",
@@ -789,18 +789,33 @@ ssl_judge_and_install() {
 
 nginx_systemd() {
     cat >$nginx_systemd_file <<EOF
+# Stop dance for OpenResty
+# =========================
+#
+# ExecStop sends SIGSTOP (graceful stop) to OpenResty's nginx process.
+# If, after 5s (--retry QUIT/5) nginx is still running, systemd takes control
+# and sends SIGTERM (fast shutdown) to the main process.
+# After another 5s (TimeoutStopSec=5), and if nginx is alive, systemd sends
+# SIGKILL to all the remaining processes in the process group (KillMode=mixed).
+#
+# nginx signals reference doc:
+# http://nginx.org/en/docs/control.html
+#
 [Unit]
-Description=The NGINX HTTP and reverse proxy server
-After=syslog.target network.target remote-fs.target nss-lookup.target
+Description=The OpenResty Application Platform
+After=syslog.target network-online.target remote-fs.target nss-lookup.target
+Wants=network-online.target
 
 [Service]
 Type=forking
-PIDFile=/etc/nginx/logs/nginx.pid
-ExecStartPre=/etc/nginx/sbin/nginx -t
-ExecStart=/etc/nginx/sbin/nginx -c ${nginx_dir}/conf/nginx.conf
-ExecReload=/etc/nginx/sbin/nginx -s reload
-ExecStop=/bin/kill -s QUIT \$MAINPID
-PrivateTmp=true
+PIDFile=/usr/local/openresty/nginx/logs/nginx.pid
+ExecStartPre=/usr/local/openresty/nginx/sbin/nginx -t -q -g 'daemon on; master_process on;'
+ExecStartPost=/usr/bin/sleep 0.1
+ExecStart=/usr/local/openresty/nginx/sbin/nginx -g 'daemon on; master_process on;'
+ExecReload=/usr/local/openresty/nginx/sbin/nginx -g 'daemon on; master_process on;' -s reload
+ExecStop=-/sbin/start-stop-daemon --quiet --stop --retry QUIT/5 --pidfile /usr/local/openresty/nginx/logs/nginx.pid
+TimeoutStopSec=5
+KillMode=mixed
 
 [Install]
 WantedBy=multi-user.target
@@ -811,7 +826,7 @@ EOF
 }
 
 tls_type() {
-    if [[ -f "/etc/nginx/sbin/nginx" ]] && [[ -f "$nginx_conf" ]] && [[ "$shell_mode" == "ws" ]]; then
+    if [[ -f "$nginx_dir/sbin/nginx" ]] && [[ -f "$nginx_conf" ]] && [[ "$shell_mode" == "ws" ]]; then
         echo "请选择支持的 TLS 版本（default:3）:"
         echo "请注意,如果你使用 Quantaumlt X / 路由器 / 旧版 Shadowrocket / 低于 4.18.1 版本的 V2ray core 请选择 兼容模式"
         echo "1: TLS1.1 TLS1.2 and TLS1.3（兼容模式）"
@@ -829,7 +844,7 @@ tls_type() {
             sed -i 's/ssl_protocols.*/ssl_protocols         TLSv1.2 TLSv1.3;/' $nginx_conf
             echo -e "${OK} ${GreenBG} 已切换至 TLS1.2 and TLS1.3 ${Font}"
         fi
-        systemctl restart nginx
+        systemctl restart openresty
         judge "Nginx 重启"
     else
         echo -e "${Error} ${RedBG} Nginx 或 配置文件不存在 或当前安装版本为 h2 ，请正确安装脚本后执行${Font}"
@@ -957,7 +972,7 @@ install_v2_h2() {
 
 }
 update_sh() {
-    ol_version=$(curl -L -s https://raw.githubusercontent.com/wulabing/V2Ray_ws-tls_bash_onekey/${github_branch}/install.sh | grep "shell_version=" | head -1 | awk -F '=|"' '{print $3}')
+    ol_version=$(curl -L -s https://raw.githubusercontent.com/SJ2050cn/V2Ray_ws-tls_bash_onekey/${github_branch}/install.sh | grep "shell_version=" | head -1 | awk -F '=|"' '{print $3}')
     echo "$ol_version" >$version_cmp
     echo "$shell_version" >>$version_cmp
     if [[ "$shell_version" < "$(sort -rV $version_cmp | head -1)" ]]; then
@@ -965,7 +980,7 @@ update_sh() {
         read -r update_confirm
         case $update_confirm in
         [yY][eE][sS] | [yY])
-            wget -N --no-check-certificate https://raw.githubusercontent.com/wulabing/V2Ray_ws-tls_bash_onekey/${github_branch}/install.sh
+            wget -N --no-check-certificate https://raw.githubusercontent.com/SJ2050cn/V2Ray_ws-tls_bash_onekey/${github_branch}/install.sh
             echo -e "${OK} ${GreenBG} 更新完成 ${Font}"
             exit 0
             ;;
@@ -1052,7 +1067,7 @@ menu() {
         install_v2_h2
         ;;
     3)
-        bash <(curl -L -s https://raw.githubusercontent.com/wulabing/V2Ray_ws-tls_bash_onekey/${github_branch}/v2ray.sh)
+        bash <(curl -L -s https://raw.githubusercontent.com/SJ2050cn/V2Ray_ws-tls_bash_onekey/${github_branch}/v2ray.sh)
         ;;
     4)
         read -rp "请输入UUID:" UUID
