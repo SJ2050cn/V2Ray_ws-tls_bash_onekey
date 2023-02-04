@@ -323,7 +323,7 @@ v2ray_install() {
     fi
     mkdir -p /root/v2ray
     cd /root/v2ray || exit
-    wget -N --no-check-certificate https://raw.githubusercontent.com/wulabing/V2Ray_ws-tls_bash_onekey/${github_branch}/v2ray.sh
+    wget -N --no-check-certificate https://raw.githubusercontent.com/SJ2050cn/V2Ray_ws-tls_bash_onekey/${github_branch}/v2ray.sh
 
     if [[ -f v2ray.sh ]]; then
         rm -rf $v2ray_systemd_file
@@ -391,7 +391,7 @@ nginx_install() {
 
     cd ../openresty-${nginx_version} || exit
 
-    ./configure --prefix="${nginx_dir}" \
+    ./configure --prefix="${nginx_dir%/*}" \
         --with-http_ssl_module \
         --with-http_sub_module \
         --with-http_gzip_static_module \
@@ -402,7 +402,7 @@ nginx_install() {
         --with-http_mp4_module \
         --with-http_secure_link_module \
         --with-http_v2_module \
-        --with-cc-opt='-O2' \
+        --with-cc-opt='-O3' \
         --with-ld-opt="-ljemalloc" \
         --with-openssl=../openssl-"$openssl_version"
     judge "编译检查"
@@ -566,7 +566,7 @@ nginx_conf_add() {
         ssl_ciphers           TLS13-AES-256-GCM-SHA384:TLS13-CHACHA20-POLY1305-SHA256:TLS13-AES-128-GCM-SHA256:TLS13-AES-128-CCM-8-SHA256:TLS13-AES-128-CCM-SHA256:EECDH+CHACHA20:EECDH+CHACHA20-draft:EECDH+ECDSA+AES128:EECDH+aRSA+AES128:RSA+AES128:EECDH+ECDSA+AES256:EECDH+aRSA+AES256:RSA+AES256:EECDH+ECDSA+3DES:EECDH+aRSA+3DES:RSA+3DES:!MD5;
         server_name           serveraddr.com;
         index index.html index.htm;
-        root  /home/wwwroot/3DCEList;
+        root  /home/wwwroot/static-nav;
         error_page 400 = /400.html;
 
         # Config for 0-RTT in TLSv1.3
@@ -808,12 +808,12 @@ Wants=network-online.target
 
 [Service]
 Type=forking
-PIDFile=/usr/local/openresty/nginx/logs/nginx.pid
-ExecStartPre=/usr/local/openresty/nginx/sbin/nginx -t -q -g 'daemon on; master_process on;'
+PIDFile=$nginx_dir/logs/nginx.pid
+ExecStartPre=$nginx_dir/sbin/nginx -t -q -g 'daemon on; master_process on;'
 ExecStartPost=/usr/bin/sleep 0.1
-ExecStart=/usr/local/openresty/nginx/sbin/nginx -g 'daemon on; master_process on;'
-ExecReload=/usr/local/openresty/nginx/sbin/nginx -g 'daemon on; master_process on;' -s reload
-ExecStop=-/sbin/start-stop-daemon --quiet --stop --retry QUIT/5 --pidfile /usr/local/openresty/nginx/logs/nginx.pid
+ExecStart=$nginx_dir/sbin/nginx -g 'daemon on; master_process on;'
+ExecReload=$nginx_dir/sbin/nginx -g 'daemon on; master_process on;' -s reload
+ExecStop=-/sbin/start-stop-daemon --quiet --stop --retry QUIT/5 --pidfile $nginx_dir/logs/nginx.pid
 TimeoutStopSec=5
 KillMode=mixed
 
@@ -1026,7 +1026,7 @@ modify_camouflage_path() {
 menu() {
     update_sh
     echo -e "\t V2ray 安装管理脚本 ${Red}[${shell_version}]${Font}"
-    echo -e "\t---authored by wulabing---"
+    echo -e "\t---authored by wulabing&SJ2050---"
     echo -e "\thttps://github.com/wulabing\n"
     echo -e "当前已安装版本:${shell_mode}\n"
 
